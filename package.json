@@ -1,0 +1,31 @@
+{
+  "name": "express_backend",
+  "version": "1.0.0",
+  "description": "A backend rest api using Express",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon ./src/app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mkjhonsonS/express_backend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mkjhonsonS/express_backend/issues"
+  },
+  "homepage": "https://github.com/mkjhonsonS/express_backend#readme",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "express": "^4.18.1",
+    "jsonwebtoken": "^8.5.1",
+    "multer": "^1.4.4",
+    "prisma": "^3.14.0",
+    "socket.io": "^4.5.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.16"
+  }
+}

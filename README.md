@@ -1,2 +1,2 @@
-# express_backend
+# ExpressJS Backend
 A backend rest api using Express

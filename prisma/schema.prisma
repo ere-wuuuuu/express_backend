@@ -2,10 +2,139 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["referentialIntegrity"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String         @id @default(uuid())
+  first_name        String
+  last_name         String
+  email             String         @unique
+  username          String         @unique
+  password          String
+  birth_date        DateTime       @db.Date
+  profile_picture   String         @default("default.png")
+  bio               String?
+  posts             Post[]
+  likes             Like[]
+  comments          Comment[]
+  reactions         Reaction[]
+  confirmation      Confirmation[]
+  sent_messages     Message[]      @relation(name: "sent")
+  received_messages Message[]      @relation(name: "received")
+  created_at        DateTime       @default(now())
+
+  @@map("users")
+}
+
+model Post {
+  id         String     @id @default(uuid())
+  post_type  PostTypes
+  caption    String?
+  location   String?
+  content    String
+  user       User       @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  user_id    String
+  likes      Like[]
+  comments   Comment[]
+  reactions  Reaction[]
+  created_at DateTime   @default(now())
+
+  @@map("posts")
+}
+
+model Like {
+  id         String   @id @default(uuid())
+  post       Post     @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  post_id    String
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id    String
+  created_at DateTime @default(now())
+
+  @@map("likes")
+}
+
+model Comment {
+  id           String      @id @default(uuid())
+  post         Post        @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  post_id      String
+  user         User        @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  user_id      String
+  content      String
+  comment_type CommentType
+  created_at   DateTime    @default(now())
+
+  @@map("comments")
+}
+
+model Reaction {
+  id            String       @id @default(uuid())
+  post          Post         @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  post_id       String
+  user          User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id       String
+  reaction_type ReactionType
+  created_at    DateTime     @default(now())
+
+  @@map("reactions")
+}
+
+model Message {
+  id           String      @id @default(uuid())
+  sender       User        @relation(fields: [sender_id], references: [id], name: "sent", onDelete: SetNull)
+  sender_id    String
+  receiver     User        @relation(fields: [receiver_id], references: [id], name: "received", onDelete: SetNull)
+  receiver_id  String
+  message_type MessageType
+  content      String
+  created_at   DateTime    @default(now())
+
+  @@map("messages")
+}
+
+model Confirmation {
+  id      String           @id @default(uuid())
+  user    User             @relation(fields: [user_id], references: [id])
+  user_id String
+  key     String
+  type    ConfirmationType
+
+  @@map("confirmation")
+}
+
+//Enums
+enum PostTypes {
+  TEXT
+  VIDEO
+  PICTURE
+}
+
+enum CommentType {
+  TEXT
+  PICTURE
+  AUDIO
+}
+
+enum ReactionType {
+  ANGRY
+  SAD
+  HAPPY
+  SPEECHLESS
+}
+
+enum MessageType {
+  PICTURE
+  TEXT
+  VIDEO
+}
+
+enum ConfirmationType {
+  DELETE
+  CHANGEPASSWORD
 }

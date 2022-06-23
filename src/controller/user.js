@@ -4,6 +4,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const path = require("path");
 const fs = require("fs");
+const moment = require("moment");
 const exclude = require("../util/functions").exclude;
 const sendMail = require("../util/transporter");
 exports.register = async (req, res, next) => {
@@ -132,7 +133,6 @@ exports.update = async (req, res, next) => {
 exports.getUser = async (req, res, next) => {
     const id = req.params.id;
     let user;
-    console.log(req.user);
     if (!req.user) {
         user = await prisma.user.findUnique({
             where: {
@@ -147,9 +147,14 @@ exports.getUser = async (req, res, next) => {
             include: {
                 posts: {
                     include: {
-                        likes: true,
-                        comments: true
-                    }
+                        likes: {
+                            take: 6,
+                        },
+                        comments: {
+                            take: 6
+                        }
+                    },
+                    take: 6
                 }
             }
         });
@@ -167,7 +172,14 @@ exports.getUser = async (req, res, next) => {
         };
         return next(new Error(JSON.stringify(message)));
     }
-    res.status(200).send(exclude(user, "password", "bio", "created_at"));
+    user.profile_picture = `${appUrl}/dp/${user.profile_picture}`;
+    if (user.posts) {
+        user.posts = user.posts.map(post => {
+            if (post.post_type == "VIDEO") return post.content = `${appUrl}/posts/videos/${post.content}`;
+            if (post.post_type == "PICTURE") return post.content = `${appUrl}/posts/pictures/${post.content}`;
+        });
+    }
+    res.status(200).send(exclude(user, "password", "created_at"));
 };
 
 exports.sendDeleteConfirmation = async (req, res, next) => {
@@ -199,4 +211,114 @@ exports.sendDeleteConfirmation = async (req, res, next) => {
     });
     let response = sendMail(process.env.SYSTEM_EMAIL, user.email, "Deleting your account", otp);
     res.send(response);
+};
+
+exports.getProfile = async (req, res, next) => {
+    const id = req.user.id;
+    if (req.params.post_count && +req.params.post_count > 15) {
+        let message = {
+            status: 400,
+            error: [
+                {
+                    msg: "Number of post per page can not exceed 14",
+                    param: "post_count",
+                },
+            ],
+        };
+        return next(new Error(JSON.stringify(message)));
+    }
+    const post_count = req.params.post_count ? +req.params.post_count : 1;
+    const post_page = req.params.post_page ? +req.params.post_page : 1;
+    let user = await prisma.user.findUnique({
+        where: {
+            id
+        },
+        include: {
+            posts: {
+                include: {
+                    likes: {
+                        include: {
+                            user: {
+                                select: {
+                                    id: true,
+                                    username: true,
+                                }
+                            }
+                        },
+                        take: 2
+                    },
+                    comments: {
+                        include: {
+                            user: {
+                                select: {
+                                    id: true,
+                                    username: true,
+                                }
+                            }
+                        },
+                        take: 2
+                    },
+                    _count: true
+                },
+                take: post_count,
+                skip: post_count * (post_page - 1)
+
+            },
+            _count: {
+                select: {
+                    posts: true,
+
+                }
+            }
+        }
+    });
+    if (!user) {
+        let message = {
+            status: 404,
+            error: [
+                {
+                    msg: "User not found",
+                    param: "id",
+                },
+            ],
+        };
+        return next(new Error(JSON.stringify(message)));
+    }
+    user.profile_picture = `${appUrl}/dp/${user.profile_picture}`;
+    user.posts = user.posts.map(post => {
+        return {
+            ...post,
+            created_at: moment(post.created_at).format("DD-MM-YYYY, h:mm:ss").toString(),
+            content: (post.post_type == "VIDEO") ? `${appUrl}/posts/videos/${post.content}` : (post.post_type == "PICTURE") ? `${appUrl}/posts/pictures/${post.content}` : post.content,
+            likes: post.likes.map(like => {
+                return {
+                    ...like,
+                    created_at: moment(like.created_at).format("DD-MM-YYYY, h:mm:ss").toString(),
+                };
+            }),
+            comments: post.comments.map(comment => {
+                return {
+                    ...comment,
+                    created_at: moment(comment.created_at).format("DD-MM-YYYY, h:mm:ss").toString(),
+                    content: (comment.comment_type == "AUDIO") ? `${appUrl}/comments/audio/${comment.content}` : (comment.comment_type == "PICTURE") ? `${appUrl}/comments/pictures/${comment.content}` : comment.content,
+                };
+            })
+        };
+    });
+    user.posts.forEach(post => {
+        exclude(post, "user_id");
+        post.likes.forEach(like => {
+            exclude(like, "user_id", "post_id");
+        });
+        post.comments.forEach(comment => {
+            exclude(comment, "user_id", "post_id");
+        });
+    });
+    res.status(200).send(exclude(user, "password", "created_at"));
+};
+
+exports.toggleFollow = async (req, res, next) => {
+    const user_id = req.user.id;
+    const follow_id = req.body.follow_id;
+    let;
 };

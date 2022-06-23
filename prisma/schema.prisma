@@ -21,16 +21,33 @@ model User {
   birth_date        DateTime       @db.Date
   profile_picture   String         @default("default.png")
   bio               String?
-  posts             Post[]
+  account_type      AccountType    @default(PUBLIC)
+  posts             Post[]         @relation(name: "posted_by")
   likes             Like[]
   comments          Comment[]
   reactions         Reaction[]
+  followers         Follow[]       @relation(name: "following")
+  following         Follow[]       @relation(name: "follower")
   confirmation      Confirmation[]
   sent_messages     Message[]      @relation(name: "sent")
   received_messages Message[]      @relation(name: "received")
   created_at        DateTime       @default(now())
 
+
+  Post   Post?   @relation(fields: [postId], references: [id])
+  postId String?
   @@map("users")
+}
+
+model Follow {
+  id           String   @id @default(uuid())
+  follower     User     @relation(fields: [follower_id], references: [id], name: "follower")
+  following    User     @relation(fields: [following_id], references: [id], name: "following")
+  follower_id  String
+  following_id String
+  createdAt    DateTime @default(now())
+
+  @@map("follow")
 }
 
 model Post {
@@ -39,7 +56,8 @@ model Post {
   caption    String?
   location   String?
   content    String
-  user       User       @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  user       User       @relation(fields: [user_id], references: [id], onDelete: SetNull, name: "posted_by")
+  seen_by    User[]
   user_id    String
   likes      Like[]
   comments   Comment[]
@@ -137,4 +155,9 @@ enum MessageType {
 enum ConfirmationType {
   DELETE
   CHANGEPASSWORD
+}
+
+enum AccountType {
+  PRIVATE
+  PUBLIC
 }

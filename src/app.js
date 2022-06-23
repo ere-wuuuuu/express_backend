@@ -6,9 +6,9 @@ const cors = require("cors");
 //Import helper functions
 const errorHandler = require("./util/error-handler");
 const app = express();
-app.use(cors());
 app.use(express.json());
 global.appRoot = __dirname;
+app.use(express.static(path.join(appRoot, "..", "media")));
 require("dotenv").config();
 try {
     if (!fs.existsSync(path.join(appRoot, "..", "media"))) {
@@ -27,12 +27,14 @@ try {
 // Routes;
 const user = require("./routes/user");
 const post = require("./routes/post");
+app.use(cors({ allowedHeaders: "*", origin: "*", methods: "*" }));
 app.use("/api/user", user);
 app.use("/api/post", post);
 
 //Error handler
 app.use(errorHandler);
 const PORT = process.env.PORT || 6735;
+global.appUrl = "http://localhost:" + PORT;
 app.listen(PORT, () => {
     console.log("Server running on port ", PORT);
 });

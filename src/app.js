@@ -2,9 +2,11 @@ const express = require("express");
 const fs = require("fs");
 var path = require("path");
 const { env } = require("process");
+const cors = require("cors");
 //Import helper functions
 const errorHandler = require("./util/error-handler");
 const app = express();
+app.use(cors());
 app.use(express.json());
 global.appRoot = __dirname;
 require("dotenv").config();

@@ -40,89 +40,9 @@ exports.addPost = async (req, res, next) => {
             },
             post_type
         },
-        select: {
-            user: {
-                select: {
-                    username: true,
-                    email: true
-                }
-            }
-        }
     });
     res.send(post);
 };
-exports.showPosts = async (req, res, next) => {
-    let posts = await prisma.post.findMany({
-        select: {
-            _count: true,
-            id: true,
-            post_type: true,
-            caption: true,
-            content: true,
-            created_at: true,
-            user: {
-                select: {
-                    id: true,
-                    username: true,
-                    profile_picture: true
-                }
-            },
-            comments: {
-                select: {
-                    id: true,
-                    comment_type: true,
-                    content: true,
-                    created_at: true,
-                    user: {
-                        select: {
-                            id: true,
-                            username: true,
-                            profile_picture: true
-                        }
-                    }
-                }
-            },
-            likes: {
-                select: {
-                    id: true,
-                    created_at: true,
-                    user: {
-                        select: {
-                            id: true,
-                            username: true,
-                            profile_picture: true
-                        }
-                    }
-                }
-            }
-        }
-    });
-    posts = posts.map(post => {
-        return {
-            ...post,
-            created_at: moment(post.created_at).format("DD-MM-YYYY, h:mm:ss").toString(),
-            user: { ...post.user, profile_picture: path.resolve(appRoot, "..", "media", "dp", post.user.profile_picture) },
-            likes: post.likes.map(like => {
-                return {
-                    ...like,
-                    created_at: moment(like.created_at).format("DD-MM-YYYY, h:mm:ss").toString(),
-                    user: { ...like.user, profile_picture: path.resolve(appRoot, "..", "media", "dp", like.user.profile_picture) },
-                };
-            }),
-            comments:
-                post.comments.map(comment => {
-                    return {
-                        ...comment,
-                        created_at: moment(comment.created_at).format("DD-MM-YYYY, h:mm:ss").toString(),
-                        user: { ...comment.user, profile_picture: path.resolve(appRoot, "..", "media", "dp", comment.user.profile_picture) },
-                    };
-                })
-
-        };
-    });
-    res.send(posts);
-};
-
 exports.toggleLike = async (req, res, next) => {
     const post_id = req.body.post_id;
     const user_id = req.user.id;
@@ -170,26 +90,8 @@ exports.toggleLike = async (req, res, next) => {
                 }
             },
         },
-        select: {
-            post: {
-                select: {
-                    id: true,
-                    post_type: true,
-                    caption: true,
-                    content: true,
-                }
-            },
-            user: {
-                select: {
-                    id: true,
-                    username: true,
-                    profile_picture: true,
-                }
-            }
-        }
     });
     like.status = "LIKE";
-    like.user.profile_picture = path.resolve(appRoot, "..", "media", "dp", like.user.profile_picture);
     res.send(like);
 };
 
@@ -352,4 +254,128 @@ exports.removeComment = async (req, res, next) => {
     if (remove.comment_type == "PICTURE") fs.unlinkSync(path.resolve(appRoot, "..", "media", "comments", "pictures", remove.content));
     if (remove.comment_type == "AUDIO") fs.unlinkSync(path.resolve(appRoot, "..", "media", "comments", "audio", remove.content));
     res.send(remove);
+};
+exports.getFeed = async (req, res, next) => {
+    const count = req.params.count ? +req.params.count : 5;
+    const page = req.params.page ? +req.params.page : 1;
+    const user_id = req.user.id;
+    let users_id = [user_id];
+    let following = await prisma.follow.findMany({
+        where: {
+            follower_id: user_id
+        }
+    });
+    following.forEach(follow => {
+        users_id.push(follow.following_id);
+    });
+    let posts = await prisma.post.findMany({
+        where: {
+            user: {
+                id: {
+                    in: users_id
+                }
+            }
+        },
+        select: {
+            _count: true,
+            id: true,
+            caption: true,
+            post_type: true,
+            content: true,
+            created_at: true,
+            location: true,
+            user: {
+                select: {
+                    id: true,
+                    username: true,
+                    profile_picture: true
+                }
+            }
+        },
+        take: count,
+        skip: count * (page - 1)
+    });
+    posts = posts.map(post => {
+        return {
+            ...post,
+            user: {
+                ...post.user,
+                profile_picture: `${appUrl}/db/${post.user.profile_picture}`
+            },
+            created_at: moment(post.created_at).format("DD-MM-YYYY, h:mm:ss").toString()
+        };
+    });
+    res.send(posts);
+};
+
+exports.getPost = async (req, res, next) => {
+    const post_id = req.params.post_id;
+    const comment_count = req.query.comment_count ? +req.query.comment_count : 5;
+    const comment_page = req.query.comment_page ? +req.query.comment_page : 1;
+    let post = await prisma.post.findUnique({
+        where: {
+            id: post_id
+        },
+        include: {
+            user: {
+                select: {
+                    id: true,
+                    username: true,
+                }
+            },
+            comments: {
+                select: {
+                    id: true,
+                    user: {
+                        select: {
+                            id: true,
+                            username: true,
+                        }
+                    },
+                    comment_type: true,
+                    content: true,
+                    created_at: true
+                },
+                take: comment_count,
+                skip: comment_count * (comment_page - 1)
+            },
+            likes: {
+                select: {
+                    user_id: true,
+                    created_at: true,
+                }
+            }
+        }
+    });
+    post = {
+        ...post,
+        likes: post.likes.map(like => {
+            return {
+                ...like,
+                created_at: moment(like.created_at).format("DD-MM-YYYY, h:mm:ss").toString()
+            };
+        }),
+        comments: post.comments.map(comment => {
+            return {
+                ...comment,
+                created_at: moment(comment.created_at).format("DD-MM-YYYY, h:mm:ss").toString()
+            };
+        }),
+        created_at: moment(post.created_at).format("DD-MM-YYYY, h:mm:ss").toString(),
+        like_status: post.likes.flatMap(like => {
+            if (req.user && like.user_id == req.user.id) {
+                return "LIKED";
+            }
+            return "NOT_LIKED";
+        }),
+        comment_status: post.likes.flatMap(comment => {
+            if (req.user && comment.user_id == req.user.id) {
+                return "COMMENTED";
+            }
+            return "NOT_COMMENTED";
+        })
+    };
+    post.comment_status = post.comment_status[0];
+    post.like_status = post.like_status[0];
+    res.send(exclude(post, "user_id"));
 };

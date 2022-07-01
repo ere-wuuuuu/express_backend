@@ -27,7 +27,7 @@ try {
 // Routes;
 const user = require("./routes/user");
 const post = require("./routes/post");
-app.use(cors({ allowedHeaders: "*", origin: "*", methods: "*" }));
+app.use(cors());
 app.use("/api/user", user);
 app.use("/api/post", post);
 

@@ -14,6 +14,10 @@ router.get("/profile/:post_count?/:post_page?", isUser, user.getProfile);
 
 router.get("/delete", isUser, user.sendDeleteConfirmation);
 
+router.post("/follow", isUser, user.toggleFollow);
+
+router.get("/all/:count?/:page?", user.getAll);
+
 router.get("/:id", user.getUser);
 
 module.exports = router;

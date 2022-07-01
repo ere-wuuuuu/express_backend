@@ -264,6 +264,28 @@ exports.getProfile = async (req, res, next) => {
                 skip: post_count * (post_page - 1)
 
             },
+            followers: {
+                include: {
+                    follower: {
+                        select: {
+                            id: true,
+                            username: true,
+                            email: true,
+                        }
+                    }
+                }
+            },
+            following: {
+                include: {
+                    following: {
+                        select: {
+                            id: true,
+                            username: true,
+                            email: true,
+                        }
+                    }
+                }
+            },
             _count: {
                 select: {
                     posts: true,
@@ -320,5 +342,59 @@ exports.getProfile = async (req, res, next) => {
 exports.toggleFollow = async (req, res, next) => {
     const user_id = req.user.id;
     const follow_id = req.body.follow_id;
-    let;
+    let following = await prisma.follow.findFirst({
+        where: {
+            follower_id: user_id,
+            following_id: follow_id
+        }
+    });
+    if (following) {
+        let unFollow = await prisma.follow.delete({
+            where: {
+                id: following.id
+            }
+        });
+        unFollow.status = "UNFOLLOW";
+        return res.send(unFollow);
+    }
+    let follow = await prisma.follow.create({
+        data: {
+            follower_id: user_id,
+            following_id: follow_id
+        }
+    });
+    follow.status = "FOLLOW";
+    res.send(follow);
+};
+
+exports.getAll = async (req, res, next) => {
+    const count = req.params.count ? +req.params.count : 5;
+    const page = req.params.page ? +req.params.page : 1;
+    let user_count = await prisma.user.count();
+    let users = await prisma.user.findMany({
+        select: {
+            id: true,
+            first_name: true,
+            last_name: true,
+            email: true,
+            username: true,
+            _count: {
+                select: {
+                    followers: true,
+                    following: true,
+                    posts: true
+                }
+            }
+        },
+        take: count,
+        skip: count * (page - 1)
+    });
+    let data = {
+        users,
+        _count: {
+            users: user_count,
+            pages: Math.ceil(user_count / count)
+        }
+    };
+    res.send(data);
 };

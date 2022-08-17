@@ -7,6 +7,7 @@ const fs = require("fs");
 const moment = require("moment");
 const exclude = require("../util/functions").exclude;
 const sendMail = require("../util/transporter");
+const { sendNotification } = require("../util/functions");
 exports.register = async (req, res, next) => {
     const first_name = req.body.first_name;
     const last_name = req.body.last_name;
@@ -45,7 +46,6 @@ exports.register = async (req, res, next) => {
     };
     res.status(201).send(return_json);
 };
-
 exports.login = async (req, res, next) => {
     const username = req.body.username;
     const password = req.body.password;
@@ -215,7 +215,7 @@ exports.sendDeleteConfirmation = async (req, res, next) => {
 
 exports.getProfile = async (req, res, next) => {
     const id = req.user.id;
-    if (req.params.post_count && +req.params.post_count > 15) {
+    if (req.query.post_count && +req.query.post_count > 15) {
         let message = {
             status: 400,
             error: [
@@ -227,8 +227,8 @@ exports.getProfile = async (req, res, next) => {
         };
         return next(new Error(JSON.stringify(message)));
     }
-    const post_count = req.params.post_count ? +req.params.post_count : 1;
-    const post_page = req.params.post_page ? +req.params.post_page : 1;
+    const post_count = req.query.post_count ? +req.query.post_count : 10;
+    const post_page = req.query.post_page ? +req.query.post_page : 1;
     let user = await prisma.user.findUnique({
         where: {
             id
@@ -284,12 +284,11 @@ exports.getProfile = async (req, res, next) => {
                             email: true,
                         }
                     }
-                }
+                },
             },
             _count: {
                 select: {
                     posts: true,
-
                 }
             }
         }
@@ -342,12 +341,16 @@ exports.getProfile = async (req, res, next) => {
 exports.toggleFollow = async (req, res, next) => {
     const user_id = req.user.id;
     const follow_id = req.body.follow_id;
+    if (user_id == follow_id) {
+        res.send({ message: "You can not follow yourself" });
+    }
     let following = await prisma.follow.findFirst({
         where: {
             follower_id: user_id,
             following_id: follow_id
         }
     });
+
     if (following) {
         let unFollow = await prisma.follow.delete({
             where: {
@@ -355,6 +358,11 @@ exports.toggleFollow = async (req, res, next) => {
             }
         });
         unFollow.status = "UNFOLLOW";
+        sendNotification({
+            status: "UNFOLLOW",
+            message: `${req.user.username} has unfollwed you`,
+            action_by: req.user.id
+        }, follow_id);
         return res.send(unFollow);
     }
     let follow = await prisma.follow.create({
@@ -364,6 +372,11 @@ exports.toggleFollow = async (req, res, next) => {
         }
     });
     follow.status = "FOLLOW";
+    sendNotification({
+        status: "FOLLOW",
+        message: `${req.user.username} has started following you`,
+        action_by: req.user.id
+    }, follow_id);
     res.send(follow);
 };
 

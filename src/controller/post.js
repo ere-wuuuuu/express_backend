@@ -5,6 +5,7 @@ const prisma = new PrismaClient();
 const exclude = require("../util/functions").exclude;
 const fs = require("fs");
 
+
 exports.addPost = async (req, res, next) => {
     const id = req.user.id;
     let content = undefined;
@@ -43,6 +44,8 @@ exports.addPost = async (req, res, next) => {
     });
     res.send(post);
 };
+
+
 exports.toggleLike = async (req, res, next) => {
     const post_id = req.body.post_id;
     const user_id = req.user.id;
@@ -95,6 +98,7 @@ exports.toggleLike = async (req, res, next) => {
     res.send(like);
 };
 
+
 exports.removePost = async (req, res, next) => {
     const post_id = req.body.post_id;
     const user_id = req.user.id;
@@ -136,6 +140,7 @@ exports.removePost = async (req, res, next) => {
     if (remove.post_type == "VIDEO") fs.unlinkSync(path.resolve(appRoot, "..", "media", "posts", "video", remove.content));
     res.send(remove);
 };
+
 
 exports.comment = async (req, res, next) => {
     const post_id = req.body.post_id;
@@ -214,6 +219,7 @@ exports.comment = async (req, res, next) => {
     res.send(comment);
 };
 
+
 exports.removeComment = async (req, res, next) => {
     const comment_id = req.body.comment_id;
     const user_id = req.user.id;
@@ -255,8 +261,10 @@ exports.removeComment = async (req, res, next) => {
     if (remove.comment_type == "AUDIO") fs.unlinkSync(path.resolve(appRoot, "..", "media", "comments", "audio", remove.content));
     res.send(remove);
 };
+
+
 exports.getFeed = async (req, res, next) => {
-    const count = req.params.count ? +req.params.count : 5;
+    const count = req.params.count ? +req.params.count : 10;
     const page = req.params.page ? +req.params.page : 1;
     const user_id = req.user.id;
     let users_id = [user_id];
@@ -298,6 +306,7 @@ exports.getFeed = async (req, res, next) => {
     posts = posts.map(post => {
         return {
             ...post,
+            content: post.post_type == "PICTURE" ? "`${appUrl}/posts/pictures/${post.content}`" : post.post_type == "VIDEO" ? `${appUrl}/post/video/${post.content}` : post.content,
             user: {
                 ...post.user,
                 profile_picture: `${appUrl}/db/${post.user.profile_picture}`
@@ -310,7 +319,7 @@ exports.getFeed = async (req, res, next) => {
 
 exports.getPost = async (req, res, next) => {
     const post_id = req.params.post_id;
-    const comment_count = req.query.comment_count ? +req.query.comment_count : 5;
+    const comment_count = req.query.comment_count ? +req.query.comment_count : 10;
     const comment_page = req.query.comment_page ? +req.query.comment_page : 1;
     let post = await prisma.post.findUnique({
         where: {
@@ -343,6 +352,12 @@ exports.getPost = async (req, res, next) => {
                 select: {
                     user_id: true,
                     created_at: true,
+                }
+            },
+            _count: {
+                select: {
+                    likes: true,
+                    comments: true
                 }
             }
         }
@@ -377,5 +392,9 @@ exports.getPost = async (req, res, next) => {
     };
     post.comment_status = post.comment_status[0];
     post.like_status = post.like_status[0];
+    if (post.post_type == "PICTURE") post.content = `${appUrl}/posts/pictures/${post.content}`;
+    if (post.post_type == "VIDEO") post.content = `${appUrl}/post/video/${post.content}`;
     res.send(exclude(post, "user_id"));
 };
+
+

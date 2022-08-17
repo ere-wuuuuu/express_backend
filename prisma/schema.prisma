@@ -32,10 +32,10 @@ model User {
   sent_messages     Message[]      @relation(name: "sent")
   received_messages Message[]      @relation(name: "received")
   created_at        DateTime       @default(now())
+  Post              Post?          @relation(fields: [postId], references: [id])
+  postId            String?
+  Event             Event[]
 
-
-  Post   Post?   @relation(fields: [postId], references: [id])
-  postId String?
   @@map("users")
 }
 
@@ -126,6 +126,17 @@ model Confirmation {
   @@map("confirmation")
 }
 
+model Event {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [user_id], references: [id])
+  user_id   String
+  link      String
+  message   String
+  createdAt DateTime @default(now())
+
+  @@map("events")
+}
+
 //Enums
 enum PostTypes {
   TEXT
@@ -150,6 +161,7 @@ enum MessageType {
   PICTURE
   TEXT
   VIDEO
+  AUDIO
 }
 
 enum ConfirmationType {

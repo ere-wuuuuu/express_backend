@@ -1,23 +1,24 @@
 const router = require("express").Router();
-const user = require("../controller/user");
+const controller = require("../controller/user");
 const validator = require("../util/validator");
 const isUser = require("../util/user-auth");
 const { uploadProfilePicture } = require("../util/post_profile_picture");
 
-router.post("/register", validator.userRegister, validator.validate, user.register);
+router.post("/register", validator.userRegister, validator.validate, controller.register);
 
-router.post("/login", validator.userLogin, validator.validate, user.login);
+router.post("/login", validator.userLogin, validator.validate, controller.login);
 
-router.patch("/update", isUser, uploadProfilePicture.single('picture'), validator.updateProfile, validator.validate, user.update);
+router.patch("/update", isUser, uploadProfilePicture.single('picture'), validator.updateProfile, validator.validate, controller.update);
 
-router.get("/profile/:post_count?/:post_page?", isUser, user.getProfile);
+router.get("/profile/", isUser, controller.getProfile);
 
-router.get("/delete", isUser, user.sendDeleteConfirmation);
+router.get("/delete", isUser, controller.sendDeleteConfirmation);
 
-router.post("/follow", isUser, user.toggleFollow);
+router.post("/follow", isUser, controller.toggleFollow);
 
-router.get("/all/:count?/:page?", user.getAll);
+router.get("/all/:count?/:page?", controller.getAll);
 
-router.get("/:id", user.getUser);
+router.get("/:id", controller.getUser);
+
 
 module.exports = router;

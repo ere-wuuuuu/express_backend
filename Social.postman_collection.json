@@ -16,7 +16,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"first_name\": \"metsahafe\",\n    \"last_name\": \"eyasu\",\n    \"email\": \"phenom@gmail.com\",\n    \"birth_date\": \"2001-10-14\",\n    \"username\": \"phenom\",\n    \"password\": \"123456\",\n    \"confirm_password\": \"123456\"\n}",
+							"raw": "{\n    \"first_name\": \"MetMiku\",\n    \"last_name\": \"Yohannes\",\n    \"email\": \"met123y@gmail.com\",\n    \"birth_date\": \"2001-04-14\",\n    \"username\": \"met123\",\n    \"password\": \"123456\",\n    \"confirm_password\": \"123456\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -106,12 +106,14 @@
 								{
 									"key": "username",
 									"value": "",
-									"type": "text"
+									"type": "text",
+									"disabled": true
 								},
 								{
 									"key": "bio",
 									"value": "Life is overrated",
-									"type": "text"
+									"type": "text",
+									"disabled": true
 								}
 							]
 						},
@@ -316,16 +318,17 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "/home/metmiku/Documents/Movies/short films/CGI 3D Animated Short Film _CICLO Animated Short Film_ by Felipe Del Rio _ CGMeetup ( 1080 X 1080 ).mp4"
+									"src": [],
+									"disabled": true
 								},
 								{
 									"key": "caption",
-									"value": "A Short film",
+									"value": "Just a thought ",
 									"type": "text"
 								},
 								{
 									"key": "content",
-									"value": "This is a test post to see if the delete functionality works and if it also removes the likes",
+									"value": "Why are we here? Just to suffer and die in agony. We should leave this place as fast as possible",
 									"type": "text"
 								}
 							]
@@ -356,12 +359,13 @@
 							"formdata": []
 						},
 						"url": {
-							"raw": "{{uri}}/post",
+							"raw": "{{uri}}/post/9a1a0ef2-45ec-4440-82f9-05e93667f8df",
 							"host": [
 								"{{uri}}"
 							],
 							"path": [
-								"post"
+								"post",
+								"9a1a0ef2-45ec-4440-82f9-05e93667f8df"
 							]
 						}
 					},
@@ -380,13 +384,15 @@
 							"formdata": []
 						},
 						"url": {
-							"raw": "{{uri}}/post/feed",
+							"raw": "{{uri}}/post/feed/2/2",
 							"host": [
 								"{{uri}}"
 							],
 							"path": [
 								"post",
-								"feed"
+								"feed",
+								"2",
+								"2"
 							]
 						}
 					},
@@ -456,13 +462,13 @@
 							"formdata": [
 								{
 									"key": "post_id",
-									"value": "8096be27-9a25-4cc1-803b-e49afa8142da",
+									"value": "f6596a98-e717-44ef-a9c9-a4e4272a3a96",
 									"type": "text"
 								},
 								{
 									"key": "file",
 									"type": "file",
-									"src": "/home/metmiku/Pictures/Wallpaper/Fighter-Jets.jpg"
+									"src": "/home/metmiku/Pictures/Wallpapers/Spaceman-Spacejellyfish.png"
 								},
 								{
 									"key": "caption",
